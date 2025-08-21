@@ -279,28 +279,27 @@ def data():
         "t_akhir": t_akhir
     })
 
-# --- Main ---
-if __name__ == "__main__":
-    # Jalankan polling chat di thread terpisah
-    t = threading.Thread(target=polling_chat, daemon=True)
-    t.start()
-
-    # Jalankan bot Telegram di thread terpisah
-    def run_bot():
-        app_telegram = ApplicationBuilder().token(TOKEN).build()
-        app_telegram.add_handler(CommandHandler("rank_all", rank_all))
-        app_telegram.add_handler(CommandHandler("rank_berdasarkan", rank_berdasarkan))
-        app_telegram.add_handler(CommandHandler("reset_data", reset_data))
-        app_telegram.add_handler(CommandHandler("reset_2025", reset_2025))
-        app_telegram.add_handler(CommandHandler("export_all", export_all))
-        app_telegram.add_handler(CommandHandler("export_waktu", export_waktu))
-        app_telegram.add_handler(CommandHandler("rank_berdasarkan_username", rank_berdasarkan_username))
-        print("Bot Telegram aktif...")
-        app_telegram.run_polling()
-
-    t2 = threading.Thread(target=run_bot, daemon=True)
-    t2.start()
-
-    # Jalankan Flask di thread utama
+def run_flask():
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port, debug=True)
+
+if __name__ == "__main__":
+    # Jalankan polling chat di thread terpisah
+    t1 = threading.Thread(target=polling_chat, daemon=True)
+    t1.start()
+
+    # Jalankan Flask di thread terpisah
+    t2 = threading.Thread(target=run_flask, daemon=True)
+    t2.start()
+
+    # Jalankan bot Telegram di main thread (WAJIB untuk python-telegram-bot v20+)
+    app_telegram = ApplicationBuilder().token(TOKEN).build()
+    app_telegram.add_handler(CommandHandler("rank_all", rank_all))
+    app_telegram.add_handler(CommandHandler("rank_berdasarkan", rank_berdasarkan))
+    app_telegram.add_handler(CommandHandler("reset_data", reset_data))
+    app_telegram.add_handler(CommandHandler("reset_2025", reset_2025))
+    app_telegram.add_handler(CommandHandler("export_all", export_all))
+    app_telegram.add_handler(CommandHandler("export_waktu", export_waktu))
+    app_telegram.add_handler(CommandHandler("rank_berdasarkan_username", rank_berdasarkan_username))
+    print("Bot Telegram aktif...")
+    app_telegram.run_polling()
