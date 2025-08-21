@@ -12,6 +12,7 @@ def get_ranking():
         t_akhir = datetime.strptime(req["end"], "%Y-%m-%d %H:%M")
         usernames = [u.lower() for u in req.get("usernames", [])]
         mode = req.get("mode", "")
+        kata = req.get("kata", None)
     except Exception as e:
         return [], "Tidak ada DATA", "", "", []
 
@@ -22,25 +23,31 @@ def get_ranking():
                 chat = json.loads(line)
                 t_chat = datetime.strptime(chat["timestamp_wib"], "%Y-%m-%d %H:%M:%S")
                 uname = chat["username"].lower()
-                if t_awal <= t_chat <= t_akhir:
-                    if mode == "username" and usernames:
-                        if uname not in usernames:
-                            continue
-                    if uname not in user_info:
-                        user_info[uname] = {
-                            "count": 1,
-                            "last_content": chat["content"],
-                            "last_time": chat["timestamp_wib"]
-                        }
-                    else:
-                        user_info[uname]["count"] += 1
-                        if t_chat > datetime.strptime(user_info[uname]["last_time"], "%Y-%m-%d %H:%M:%S"):
-                            user_info[uname]["last_content"] = chat["content"]
-                            user_info[uname]["last_time"] = chat["timestamp_wib"]
+                # --- FILTER WAKTU ---
+                if not (t_awal <= t_chat <= t_akhir):
+                    continue
+                # --- FILTER KATA (CONTENT) ---
+                if kata and kata not in chat["content"].lower():
+                    continue
+                # --- FILTER USERNAME (JIKA MODE USERNAME) ---
+                if mode == "username" and usernames:
+                    if uname not in usernames:
+                        continue
+                # --- OLAH DATA USER ---
+                if uname not in user_info:
+                    user_info[uname] = {
+                        "count": 1,
+                        "last_content": chat["content"],
+                        "last_time": chat["timestamp_wib"]
+                    }
+                else:
+                    user_info[uname]["count"] += 1
+                    if t_chat > datetime.strptime(user_info[uname]["last_time"], "%Y-%m-%d %H:%M:%S"):
+                        user_info[uname]["last_content"] = chat["content"]
+                        user_info[uname]["last_time"] = chat["timestamp_wib"]
     except Exception as e:
         return [], "Tidak ada DATA", "", "", []
 
-    # Hanya tampilkan username yang diminta (jika mode username)
     if mode == "username" and usernames:
         ranking = [(u, user_info[u]) if u in user_info else (u, {"count": 0, "last_content": "-", "last_time": "-"}) for u in usernames]
     else:
@@ -138,7 +145,7 @@ def data():
         "t_awal": t_awal,
         "t_akhir": t_akhir
     })
-
+    
 if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 8080))
