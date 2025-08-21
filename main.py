@@ -283,6 +283,7 @@ def run_flask():
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port, debug=True)
 
+# --- Main ---
 if __name__ == "__main__":
     # Jalankan polling chat di thread terpisah
     t1 = threading.Thread(target=polling_chat, daemon=True)
@@ -292,7 +293,7 @@ if __name__ == "__main__":
     t2 = threading.Thread(target=run_flask, daemon=True)
     t2.start()
 
-    # Jalankan bot Telegram di main thread (WAJIB untuk python-telegram-bot v20+)
+    # Jalankan bot Telegram di main thread
     app_telegram = ApplicationBuilder().token(TOKEN).build()
     app_telegram.add_handler(CommandHandler("rank_all", rank_all))
     app_telegram.add_handler(CommandHandler("rank_berdasarkan", rank_berdasarkan))
